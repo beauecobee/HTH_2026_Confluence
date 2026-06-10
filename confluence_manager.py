@@ -466,7 +466,8 @@ def update_confluence_page(json_data, page_id=None):
     Update a Confluence page with data from JSON.
 
     This function converts the JSON back to HTML and replaces the entire
-    page content on Confluence.
+    page content on Confluence. The version number in json_data['metadata']['version']
+    will be incremented to reflect the new version after update.
 
     Args:
         json_data (dict): JSON data with the structure returned by
@@ -501,12 +502,17 @@ def update_confluence_page(json_data, page_id=None):
 
     page_data = response.json()
     current_version = page_data['version']['number']
+    new_version = current_version + 1
+
+    # Update the metadata version in the JSON data to reflect the new version
+    if "metadata" in json_data:
+        json_data["metadata"]["version"] = new_version
 
     # Update the page
     update_url = f"{creds['base_url']}/wiki/rest/api/content/{creds['page_id']}"
     update_data = {
         "version": {
-            "number": current_version + 1
+            "number": new_version
         },
         "title": page_data['title'],
         "type": "page",
@@ -527,6 +533,7 @@ def update_confluence_page(json_data, page_id=None):
 
     if response.status_code == 200:
         print(f"✓ Successfully updated Confluence page!")
+        print(f"  New version: {new_version}")
         print(f"  Page URL: {creds['base_url']}/wiki/spaces/x/pages/{creds['page_id']}")
         return True
     else:
